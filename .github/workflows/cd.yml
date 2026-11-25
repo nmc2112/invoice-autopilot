@@ -79,7 +79,7 @@ jobs:
           env_vars: |
             INVOICE_AUTOPILOT_CONFIG=/app/config/settings.cloud.yaml
             RATE_LIMIT_PER_HOUR=30
-            AUTOSEED_HISTORY=120
+            AUTOSEED_HISTORY=40
           secrets: |
             LLM_API_KEY=llm-api-key:latest
           flags: >-

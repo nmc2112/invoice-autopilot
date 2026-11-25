@@ -41,6 +41,12 @@ gcloud iam service-accounts describe "${DEPLOYER_SA}" >/dev/null 2>&1 || \
 gcloud iam service-accounts describe "${RUNTIME_SA}" >/dev/null 2>&1 || \
   gcloud iam service-accounts create "${RUNTIME}" --display-name="Cloud Run runtime (least privilege)"
 
+echo "==> Waiting for the new service accounts to propagate"
+for sa in "${DEPLOYER_SA}" "${RUNTIME_SA}"; do
+  for _ in $(seq 1 12); do gcloud iam service-accounts describe "${sa}" >/dev/null 2>&1 && break; sleep 5; done
+done
+sleep 15
+
 echo "==> Roles for the deployer (deploy services, push images, act as the runtime account)"
 for role in roles/run.admin roles/artifactregistry.writer; do
   gcloud projects add-iam-policy-binding "${PROJECT_ID}" --member="serviceAccount:${DEPLOYER_SA}" \

@@ -44,5 +44,5 @@ def test_embedder_sends_api_key(monkeypatch):
 
 def test_cloud_config():
     cfg = load_settings(ROOT / "config" / "settings.cloud.yaml")
-    assert cfg.llm.api_key_env == "MISTRAL_API_KEY" and cfg.embeddings.api_key_env == "MISTRAL_API_KEY"
+    assert cfg.llm.api_key_env == "LLM_API_KEY" and cfg.embeddings.api_key_env == "LLM_API_KEY"
     assert cfg.embeddings.provider == "openai"

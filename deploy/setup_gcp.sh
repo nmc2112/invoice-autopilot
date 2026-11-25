@@ -18,7 +18,7 @@ DEPLOYER="github-deployer"
 RUNTIME="app-runtime"
 POOL="github"
 PROVIDER="github-provider"
-SECRET="mistral-api-key"
+SECRET="llm-api-key"
 
 DEPLOYER_SA="${DEPLOYER}@${PROJECT_ID}.iam.gserviceaccount.com"
 RUNTIME_SA="${RUNTIME}@${PROJECT_ID}.iam.gserviceaccount.com"
@@ -55,10 +55,10 @@ done
 gcloud iam service-accounts add-iam-policy-binding "${RUNTIME_SA}" \
   --member="serviceAccount:${DEPLOYER_SA}" --role=roles/iam.serviceAccountUser >/dev/null
 
-echo "==> Mistral API key in Secret Manager"
+echo "==> LLM API key (Gemini) in Secret Manager"
 if ! gcloud secrets describe "${SECRET}" >/dev/null 2>&1; then
   gcloud secrets create "${SECRET}" --replication-policy=automatic
-  read -r -s -p "Paste your Mistral API key (input hidden): " KEY; echo
+  read -r -s -p "Paste your Gemini API key (input hidden): " KEY; echo
   printf '%s' "${KEY}" | gcloud secrets versions add "${SECRET}" --data-file=-
   unset KEY
 fi
@@ -99,5 +99,5 @@ cat <<EOF
 
 Done. Next: push to main (or run the CD workflow from the Actions tab).
 The deploy job prints the public URL in the run summary.
-Recommended: set a budget alert in Billing > Budgets & alerts, and a monthly limit in the Mistral console.
+Recommended: set a budget alert in Billing > Budgets & alerts, and check the Gemini API usage in AI Studio.
 EOF

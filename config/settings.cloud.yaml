@@ -3,9 +3,9 @@
 prompt_version: v1
 
 llm:
-  base_url: https://api.mistral.ai/v1
-  model: mistral-small-latest
-  api_key_env: MISTRAL_API_KEY         # injected from Secret Manager, never stored in the image
+  base_url: https://generativelanguage.googleapis.com/v1beta/openai
+  model: gemini-3.5-flash-lite           # Gemini API free tier (OpenAI-compatible endpoint)
+  api_key_env: LLM_API_KEY         # injected from Secret Manager, never stored in the image
   timeout_s: 60
   max_retries: 3
   backoff_s: 1.0
@@ -13,9 +13,9 @@ llm:
 
 embeddings:
   provider: openai
-  base_url: https://api.mistral.ai/v1
-  model: mistral-embed
-  api_key_env: MISTRAL_API_KEY
+  base_url: https://generativelanguage.googleapis.com/v1beta/openai
+  model: gemini-embedding-001
+  api_key_env: LLM_API_KEY
 
 classifier:
   k: 5

@@ -29,12 +29,21 @@ class ReviewIn(BaseModel):
     account: str | None = Field(None, description="Corrected expense account, e.g. 615600")
 
 
+logger = logging.getLogger("invoice_autopilot")
+
+
 def autoseed(ap: Autopilot) -> None:
-    """Demo deployments start empty: load synthetic labelled history if AUTOSEED_HISTORY is set."""
+    """Demo deployments start empty: load synthetic labelled history if AUTOSEED_HISTORY is set.
+
+    Never fatal: if the embedding API fails, the service still starts (invoices go to review)."""
     n = int(os.environ.get("AUTOSEED_HISTORY", "0") or 0)
     if n > 0 and len(ap.classifier) == 0:
         history = [i for i in generate_invoices(n, seed=999) if i.expected_issue is None]
-        ap.seed_history([(example_text(i.supplier, i.description), i.account) for i in history])
+        try:
+            ap.seed_history([(example_text(i.supplier, i.description), i.account) for i in history])
+            logger.info("autoseed: %d examples indexed", len(ap.classifier))
+        except Exception:
+            logger.exception("autoseed failed; starting with an empty index")
 
 
 def create_app(autopilot: Autopilot | None = None) -> FastAPI:

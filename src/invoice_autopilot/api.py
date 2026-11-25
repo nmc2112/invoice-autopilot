@@ -8,7 +8,7 @@ import random
 import uuid
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
 from .classify import example_text
@@ -63,6 +63,10 @@ def create_app(autopilot: Autopilot | None = None) -> FastAPI:
     def sample_invoice() -> dict:
         inv = random.choice(samples)
         return {"text": inv.text, "expected_account": inv.account, "expected_issue": inv.expected_issue}
+
+    @app.get("/", include_in_schema=False)
+    def root() -> RedirectResponse:
+        return RedirectResponse("/docs")
 
     @app.get("/health")
     def health() -> dict:

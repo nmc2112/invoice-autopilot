@@ -37,7 +37,8 @@ class LLMConfig(BaseModel):
 
 
 class EmbeddingConfig(BaseModel):
-    provider: Literal["ollama", "openai", "hashing"] = "ollama"   # "openai" = any OpenAI-compatible API
+    provider: Literal["ollama", "openai", "fastembed", "hashing"] = "ollama"  # "openai" = any OpenAI-compatible API;
+    # "fastembed" = local ONNX model inside the process (no API, no quota, data stays on the machine)
     base_url: str = "http://localhost:11434/v1"
     model: str = "nomic-embed-text"
     api_key_env: str | None = None

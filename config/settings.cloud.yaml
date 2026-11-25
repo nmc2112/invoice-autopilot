@@ -12,10 +12,8 @@ llm:
   cache_path: data/llm_cache.db
 
 embeddings:
-  provider: openai
-  base_url: https://generativelanguage.googleapis.com/v1beta/openai
-  model: gemini-embedding-001
-  api_key_env: LLM_API_KEY
+  provider: fastembed                  # local multilingual model baked into the image: no API, no quota
+  model: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
 
 classifier:
   k: 5

@@ -44,8 +44,8 @@ def test_embedder_sends_api_key(monkeypatch):
 
 def test_cloud_config():
     cfg = load_settings(ROOT / "config" / "settings.cloud.yaml")
-    assert cfg.llm.api_key_env == "LLM_API_KEY" and cfg.embeddings.api_key_env == "LLM_API_KEY"
-    assert cfg.embeddings.provider == "openai"
+    assert cfg.llm.api_key_env == "LLM_API_KEY"
+    assert cfg.embeddings.provider == "fastembed"
 
 
 def test_openai_embedder_accepts_responses_without_index():
@@ -60,3 +60,15 @@ def test_openai_embedder_accepts_responses_without_index():
     cfg = EmbeddingConfig(provider="openai", base_url="https://example.test/v1", model="m")
     vectors = OpenAIEmbedder(cfg, transport=httpx.MockTransport(handler)).embed(["a", "b"])
     assert vectors.shape == (2, 2) and vectors[0, 0] == 1.0 and vectors[1, 1] == 1.0
+
+
+def test_fast_embedder_normalizes_model_output():
+    from invoice_autopilot.config import EmbeddingConfig
+    from invoice_autopilot.llm import FastEmbedder
+
+    class StubModel:  # stands in for fastembed.TextEmbedding (no download in tests)
+        def embed(self, texts):
+            return ([3.0, 4.0] for _ in texts)
+
+    vectors = FastEmbedder(EmbeddingConfig(provider="fastembed", model="m"), model=StubModel()).embed(["a", "b"])
+    assert vectors.shape == (2, 2) and abs(float(vectors[0, 0]) - 0.6) < 1e-6

@@ -2,6 +2,7 @@
 
 - ChatClient: /chat/completions in JSON mode, retries with exponential backoff.
 - OpenAIEmbedder: /embeddings (works with Ollama: nomic-embed-text, bge-m3...).
+- FastEmbedder: local ONNX sentence-embedding model (fastembed), runs on CPU inside the service.
 - HashingEmbedder: deterministic bag-of-words vectors, no network (tests, CI).
 - FakeLLM: scripted chat responses for tests.
 """
@@ -10,11 +11,12 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
 import re
 import time
 from collections.abc import Callable
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 
 import httpx
 import numpy as np
@@ -95,6 +97,20 @@ class OpenAIEmbedder:
         return normalize(np.asarray(vectors, dtype=np.float32))
 
 
+class FastEmbedder:
+    """Local embeddings with fastembed (ONNX Runtime, CPU). Install with: pip install ".[local]"."""
+
+    def __init__(self, cfg: EmbeddingConfig, model: Any = None):
+        if model is None:
+            from fastembed import TextEmbedding  # optional dependency, imported only when used
+
+            model = TextEmbedding(cfg.model, cache_dir=os.environ.get("FASTEMBED_CACHE_PATH"))
+        self._model = model
+
+    def embed(self, texts: list[str]) -> np.ndarray:
+        return normalize(np.asarray(list(self._model.embed(texts)), dtype=np.float32))
+
+
 class HashingEmbedder:
     """Deterministic offline embedder: hashed word and character-trigram counts."""
 
@@ -154,7 +170,11 @@ def normalize(vectors: np.ndarray) -> np.ndarray:
 
 
 def build_embedder(cfg: EmbeddingConfig) -> Embedder:
-    return HashingEmbedder() if cfg.provider == "hashing" else OpenAIEmbedder(cfg)
+    if cfg.provider == "hashing":
+        return HashingEmbedder()
+    if cfg.provider == "fastembed":
+        return FastEmbedder(cfg)
+    return OpenAIEmbedder(cfg)
 
 
 class FakeLLM:

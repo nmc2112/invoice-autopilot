@@ -1,0 +1,30 @@
+# Local run with the Cloud Run embedding model (fastembed). Chat stays on Ollama.
+prompt_version: v1
+
+llm:                                   # extraction model (OpenAI-compatible API)
+  base_url: http://localhost:11434/v1  # Ollama
+  model: qwen2.5:7b
+  api_key_env: null
+  timeout_s: 120
+  max_retries: 3
+  backoff_s: 1.0
+  cache_path: data/llm_cache.db        # identical prompts are answered from cache (no tokens)
+
+embeddings:
+  provider: fastembed                  # same local model as the Cloud Run demo (pip install -e ".[local]")
+  model: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+
+classifier:
+  k: 5                                 # neighbours used for the vote
+  auto_post_threshold: 0.75            # below this confidence, the invoice goes to human review
+
+checks:
+  vat_rates: [0.0, 5.5, 10.0, 20.0]
+  amount_tolerance: 0.02               # EUR, for HT + TVA = TTC
+  max_auto_post_amount: 10000          # larger invoices always need a human
+
+ledger:
+  journal_code: AC
+  supplier_account: "401000"
+  vat_account: "445660"
+  db_path: data/autopilot.db

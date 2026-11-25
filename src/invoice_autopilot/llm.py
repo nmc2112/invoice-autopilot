@@ -89,7 +89,9 @@ class OpenAIEmbedder:
             batch = texts[i:i + self.batch_size]
             data = _post_with_retries(self._http, "/embeddings", {"model": self.cfg.model, "input": batch},
                                       3, 1.0, self._sleep)
-            vectors += [item["embedding"] for item in sorted(data["data"], key=lambda d: d["index"])]
+            items = data["data"]  # Gemini's OpenAI-compatible API omits "index": keep response order then
+            items = sorted(items, key=lambda d: d["index"]) if all("index" in d for d in items) else items
+            vectors += [item["embedding"] for item in items]
         return normalize(np.asarray(vectors, dtype=np.float32))
 
 

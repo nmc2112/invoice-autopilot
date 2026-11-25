@@ -46,3 +46,17 @@ def test_cloud_config():
     cfg = load_settings(ROOT / "config" / "settings.cloud.yaml")
     assert cfg.llm.api_key_env == "LLM_API_KEY" and cfg.embeddings.api_key_env == "LLM_API_KEY"
     assert cfg.embeddings.provider == "openai"
+
+
+def test_openai_embedder_accepts_responses_without_index():
+    import httpx
+
+    from invoice_autopilot.config import EmbeddingConfig
+    from invoice_autopilot.llm import OpenAIEmbedder
+
+    def handler(request: httpx.Request) -> httpx.Response:  # Gemini style: no "index" field
+        return httpx.Response(200, json={"data": [{"embedding": [1.0, 0.0]}, {"embedding": [0.0, 1.0]}]})
+
+    cfg = EmbeddingConfig(provider="openai", base_url="https://example.test/v1", model="m")
+    vectors = OpenAIEmbedder(cfg, transport=httpx.MockTransport(handler)).embed(["a", "b"])
+    assert vectors.shape == (2, 2) and vectors[0, 0] == 1.0 and vectors[1, 1] == 1.0

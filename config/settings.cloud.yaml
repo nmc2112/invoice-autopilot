@@ -1,0 +1,33 @@
+# Configuration used on Cloud Run: hosted models through OpenAI-compatible APIs.
+# Re-run the eval with this file before trusting the threshold: it was tuned for nomic-embed-text.
+prompt_version: v1
+
+llm:
+  base_url: https://api.mistral.ai/v1
+  model: mistral-small-latest
+  api_key_env: MISTRAL_API_KEY         # injected from Secret Manager, never stored in the image
+  timeout_s: 60
+  max_retries: 3
+  backoff_s: 1.0
+  cache_path: data/llm_cache.db
+
+embeddings:
+  provider: openai
+  base_url: https://api.mistral.ai/v1
+  model: mistral-embed
+  api_key_env: MISTRAL_API_KEY
+
+classifier:
+  k: 5
+  auto_post_threshold: 0.75
+
+checks:
+  vat_rates: [0.0, 5.5, 10.0, 20.0]
+  amount_tolerance: 0.02
+  max_auto_post_amount: 10000
+
+ledger:
+  journal_code: AC
+  supplier_account: "401000"
+  vat_account: "445660"
+  db_path: data/autopilot.db           # ephemeral on Cloud Run: fine for a demo, use Cloud SQL for real data

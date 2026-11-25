@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import logging
+import os
+import random
 import uuid
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
+from .classify import example_text
 from .pipeline import Autopilot, Decision
-from .synth import CATALOG
+from .ratelimit import RateLimitMiddleware, rate_limit_from_env
+from .synth import CATALOG, generate_invoices
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -25,12 +29,31 @@ class ReviewIn(BaseModel):
     account: str | None = Field(None, description="Corrected expense account, e.g. 615600")
 
 
+def autoseed(ap: Autopilot) -> None:
+    """Demo deployments start empty: load synthetic labelled history if AUTOSEED_HISTORY is set."""
+    n = int(os.environ.get("AUTOSEED_HISTORY", "0") or 0)
+    if n > 0 and len(ap.classifier) == 0:
+        history = [i for i in generate_invoices(n, seed=999) if i.expected_issue is None]
+        ap.seed_history([(example_text(i.supplier, i.description), i.account) for i in history])
+
+
 def create_app(autopilot: Autopilot | None = None) -> FastAPI:
     if autopilot is None:
         from .factory import build_autopilot
         autopilot = build_autopilot()
     ap = autopilot
-    app = FastAPI(title="Invoice Autopilot", version="0.1.0")
+    autoseed(ap)
+    app = FastAPI(title="Invoice Autopilot", version="0.1.0",
+                  description="Automated bookkeeping of supplier invoices. Get a synthetic invoice from "
+                              "/sample-invoice, then POST its text to /invoices.")
+    if (limit := rate_limit_from_env()) > 0:
+        app.add_middleware(RateLimitMiddleware, limit_per_hour=limit)
+    samples = [i for i in generate_invoices(40, seed=2024)]
+
+    @app.get("/sample-invoice")
+    def sample_invoice() -> dict:
+        inv = random.choice(samples)
+        return {"text": inv.text, "expected_account": inv.account, "expected_issue": inv.expected_issue}
 
     @app.get("/health")
     def health() -> dict:

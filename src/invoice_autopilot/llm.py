@@ -80,7 +80,8 @@ class OpenAIEmbedder:
     def __init__(self, cfg: EmbeddingConfig, transport: httpx.BaseTransport | None = None,
                  batch_size: int = 64, sleep: Callable[[float], None] = time.sleep):
         self.cfg, self.batch_size, self._sleep = cfg, batch_size, sleep
-        self._http = httpx.Client(base_url=cfg.base_url, timeout=120, transport=transport)
+        headers = {"Authorization": f"Bearer {cfg.api_key}"} if cfg.api_key else {}
+        self._http = httpx.Client(base_url=cfg.base_url, timeout=120, headers=headers, transport=transport)
 
     def embed(self, texts: list[str]) -> np.ndarray:
         vectors: list[list[float]] = []

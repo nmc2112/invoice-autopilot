@@ -37,9 +37,14 @@ class LLMConfig(BaseModel):
 
 
 class EmbeddingConfig(BaseModel):
-    provider: Literal["ollama", "hashing"] = "ollama"
+    provider: Literal["ollama", "openai", "hashing"] = "ollama"   # "openai" = any OpenAI-compatible API
     base_url: str = "http://localhost:11434/v1"
     model: str = "nomic-embed-text"
+    api_key_env: str | None = None
+
+    @property
+    def api_key(self) -> str | None:
+        return os.environ.get(self.api_key_env) if self.api_key_env else None
 
 
 class ClassifierConfig(BaseModel):

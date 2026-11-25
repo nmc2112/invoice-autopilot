@@ -15,4 +15,4 @@ RUN useradd --create-home appuser && mkdir -p data && chown appuser data
 USER appuser
 EXPOSE 8000 8501
 
-CMD ["uvicorn", "invoice_autopilot.api:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn invoice_autopilot.api:create_app --factory --host 0.0.0.0 --port ${PORT:-8000}"]

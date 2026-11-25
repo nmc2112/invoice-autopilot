@@ -1,0 +1,31 @@
+# Versioned configuration: behaviour changes here, not in code.
+prompt_version: v1
+
+llm:                                   # extraction model (OpenAI-compatible API)
+  base_url: http://host.docker.internal:11434/v1  # Ollama
+  model: qwen2.5:7b
+  api_key_env: null
+  timeout_s: 120
+  max_retries: 3
+  backoff_s: 1.0
+  cache_path: data/llm_cache.db
+
+embeddings:
+  provider: ollama                     # "ollama" (OpenAI-compatible /embeddings) or "hashing" (offline, tests)
+  base_url: http://host.docker.internal:11434/v1
+  model: nomic-embed-text
+
+classifier:
+  k: 5                                 # neighbours used for the vote
+  auto_post_threshold: 0.75            # below this confidence, the invoice goes to human review
+
+checks:
+  vat_rates: [0.0, 5.5, 10.0, 20.0]
+  amount_tolerance: 0.02               # EUR, for HT + TVA = TTC
+  max_auto_post_amount: 10000          # larger invoices always need a human
+
+ledger:
+  journal_code: AC
+  supplier_account: "401000"
+  vat_account: "445660"
+  db_path: data/autopilot.db

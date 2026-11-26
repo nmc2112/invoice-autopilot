@@ -12,6 +12,7 @@ from invoice_autopilot.synth import generate_invoices
 
 def test_autoseed_and_sample_invoice(monkeypatch, settings):
     monkeypatch.setenv("AUTOSEED_HISTORY", "50")
+    monkeypatch.setenv("AUTOSEED_IN_BACKGROUND", "0")
     sample_pool = generate_invoices(40, seed=2024)
     ap = Autopilot(settings, oracle(sample_pool), HashingEmbedder(), Store(":memory:"))
     client = TestClient(create_app(ap))
@@ -72,3 +73,18 @@ def test_fast_embedder_normalizes_model_output():
 
     vectors = FastEmbedder(EmbeddingConfig(provider="fastembed", model="m"), model=StubModel()).embed(["a", "b"])
     assert vectors.shape == (2, 2) and abs(float(vectors[0, 0]) - 0.6) < 1e-6
+
+
+def test_autoseed_runs_in_background(monkeypatch, settings):
+    import threading
+    import time
+
+    monkeypatch.setenv("AUTOSEED_HISTORY", "50")
+    monkeypatch.delenv("AUTOSEED_IN_BACKGROUND", raising=False)
+    ap = Autopilot(settings, oracle([]), HashingEmbedder(), Store(":memory:"))
+    client = TestClient(create_app(ap))
+    for _ in range(100):
+        if not any(t.name == "autoseed" for t in threading.enumerate()):
+            break
+        time.sleep(0.05)
+    assert client.get("/health").json()["examples_in_index"] > 0

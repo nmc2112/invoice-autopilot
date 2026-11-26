@@ -21,6 +21,12 @@ flowchart LR
 
 > All invoices in this repository are **synthetic**, from fictional suppliers, and marked as test documents.
 
+## Live demo
+
+**https://invoice-autopilot-951530503557.europe-west9.run.app** (Swagger UI). Call `GET /sample-invoice`, then paste its `text` into `POST /invoices`.
+
+Deployed by CD on every green CI run on `main`: GitHub Actions → Artifact Registry → Cloud Run (Paris), authenticated with Workload Identity Federation (no stored key). In the cloud, extraction uses the Gemini API free tier and embeddings run **inside the container** (`paraphrase-multilingual-MiniLM-L12-v2` via fastembed, no API call). With that model the eval gives 96.7 % precision on auto-posted entries at the 0.75 threshold (49 % automation, 7/7 anomalies caught). See [deploy/DEPLOY.md](deploy/DEPLOY.md).
+
 ## What it does
 
 | Step | How | File |

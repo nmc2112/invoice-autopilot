@@ -86,7 +86,8 @@ jobs:
             --allow-unauthenticated
             --service-account=${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
             --port=${{ env.CONTAINER_PORT }}
-            --memory=1Gi
+            --memory=2Gi
+            --cpu-boost
             --min-instances=0
             --max-instances=1
             --concurrency=10

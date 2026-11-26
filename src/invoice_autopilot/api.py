@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import random
+import threading
 import uuid
 
 from fastapi import FastAPI, HTTPException
@@ -51,7 +52,11 @@ def create_app(autopilot: Autopilot | None = None) -> FastAPI:
         from .factory import build_autopilot
         autopilot = build_autopilot()
     ap = autopilot
-    autoseed(ap)
+    if os.environ.get("AUTOSEED_IN_BACKGROUND", "1") == "1" and int(os.environ.get("AUTOSEED_HISTORY", "0") or 0) > 0:
+        # Seed after the server starts listening: Cloud Run's startup probe must not wait for the model.
+        threading.Thread(target=autoseed, args=(ap,), daemon=True, name="autoseed").start()
+    else:
+        autoseed(ap)
     app = FastAPI(title="Invoice Autopilot", version="0.1.0",
                   description="Automated bookkeeping of supplier invoices. Get a synthetic invoice from "
                               "/sample-invoice, then POST its text to /invoices.")
@@ -70,7 +75,8 @@ def create_app(autopilot: Autopilot | None = None) -> FastAPI:
 
     @app.get("/health")
     def health() -> dict:
-        return {"status": "ok", "examples_in_index": len(ap.classifier)}
+        return {"status": "ok", "examples_in_index": len(ap.classifier),
+                "seeding": any(t.name == "autoseed" for t in threading.enumerate())}
 
     @app.post("/invoices", response_model=Decision)
     def process(inv: InvoiceIn) -> Decision:

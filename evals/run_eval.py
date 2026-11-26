@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -116,7 +117,8 @@ def main() -> None:
         print(f"   {t:<7.2f} {len(auto_t) / n:>8.1%}   {prec:>10.1%}")
     out = ROOT / "evals" / "results"
     out.mkdir(exist_ok=True)
-    (out / f"{summary['mode'].replace(':', '_').replace(' ', '')}_{int(time.time())}.json").write_text(
+    slug = re.sub(r"[^A-Za-z0-9._+-]+", "_", summary["mode"].replace(" ", ""))  # model names may contain "/"
+    (out / f"{slug}_{int(time.time())}.json").write_text(
         json.dumps({"summary": summary, "rows": rows}, indent=2))
 
 
